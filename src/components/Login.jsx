@@ -3,6 +3,9 @@ import { BrandLogo } from "./Shared.jsx";
 import { lbl, inp, btnS } from "../styles.js";
 
 const QUICK_LOGINS = {
+  system: [
+    { label:"Super Admin", e:"super@bps.app", p:"9999" },
+  ],
   saa: [
     { label:"Admin",      e:"admin@staustin.ac.ke",   p:"0000" },
     { label:"Pastoral",   e:"kamau@staustin.ac.ke",   p:"1111" },

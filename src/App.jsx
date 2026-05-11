@@ -6,6 +6,7 @@ import Login from "./components/Login.jsx";
 import StaffApp from "./components/StaffApp.jsx";
 import StudentApp from "./components/StudentApp.jsx";
 import ParentApp from "./components/ParentApp.jsx";
+import SuperAdminApp from "./components/SuperAdminApp.jsx";
 
 const INIT = {
   students: [], staff: [], logs: [], notifications: [], appeals: [],
@@ -99,8 +100,9 @@ export default function App() {
   const schoolId = getSchoolId();
   const props = { state, dispatch: serverDispatch, user, onLogout: handleLogout, brand: state.brand };
 
-  if (!user)                    return <Login state={state} onLogin={handleLogin} brand={state.brand} schoolId={schoolId} />;
-  if (user.role === "student")  return <StudentApp {...props} />;
-  if (user.role === "parent")   return <ParentApp  {...props} />;
+  if (!user)                       return <Login state={state} onLogin={handleLogin} brand={state.brand} schoolId={schoolId} />;
+  if (user.role === "superadmin")  return <SuperAdminApp user={user} onLogout={handleLogout} />;
+  if (user.role === "student")     return <StudentApp {...props} />;
+  if (user.role === "parent")      return <ParentApp  {...props} />;
   return <StaffApp {...props} />;
 }

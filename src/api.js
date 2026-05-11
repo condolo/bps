@@ -58,4 +58,10 @@ export const api = {
 
   getBrand:    ()      => req('GET', '/brand'),
   updateBrand: (brand) => req('PUT', '/brand', brand),
+
+  // Super admin (schoolId must be 'system')
+  superStats:         ()         => req('GET',   '/super/stats'),
+  superSchools:       ()         => req('GET',   '/super/schools'),
+  superRegister:      (data)     => req('POST',  '/super/schools', data),
+  superUpdateSchool:  (id, data) => req('PATCH', `/super/schools/${id}`, data),
 };

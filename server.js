@@ -213,6 +213,78 @@ app.put('/api/brand', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── SUPER ADMIN ──────────────────────────────────────────────────────────────
+function requireSuper(req, res, next) {
+  if (req.schoolId !== 'system') return res.status(403).json({ error: 'Forbidden' });
+  next();
+}
+
+app.get('/api/super/schools', requireSuper, async (req, res) => {
+  try {
+    const schools = await col('schools').find({}, noId).sort({ createdAt: 1 }).toArray();
+    const withStats = await Promise.all(schools.map(async s => ({
+      ...s,
+      studentCount: await col('students').countDocuments({ schoolId: s.id }),
+      staffCount:   await col('users').countDocuments({ schoolId: s.id, role: { $nin: ['student','parent','superadmin'] } }),
+      parentCount:  await col('users').countDocuments({ schoolId: s.id, role: 'parent' }),
+      studentUserCount: await col('users').countDocuments({ schoolId: s.id, role: 'student' }),
+    })));
+    res.json(withStats);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/super/schools', requireSuper, async (req, res) => {
+  try {
+    const { id, name, motto, primaryColor, secondaryColor, adminName, adminEmail, adminPin } = req.body;
+    if (!id || !name || !adminEmail || !adminPin) return res.status(400).json({ error: 'id, name, adminEmail and adminPin are required.' });
+    const exists = await col('schools').findOne({ id });
+    if (exists) return res.status(400).json({ error: `School ID "${id}" already exists.` });
+
+    const now = new Date().toISOString();
+    const pc  = primaryColor  || '#4a1a7a';
+    const sc  = secondaryColor || pc;
+
+    const school = { id, name, motto: motto||'', status: 'active', adminEmail, primaryColor: pc, createdAt: now };
+    const brand  = {
+      schoolId: id, schoolName: name, motto: motto||'',
+      logoUrl: '', primaryColor: pc, secondaryColor: sc,
+      accentColor: '#e9d5ff', buttonColor: pc, highlightColor: '#f3e8ff',
+      borderColor: '#c4b5fd', address: '', phone: '', email: adminEmail,
+      website: '', facebook: '', twitter: '', instagram: '', whatsapp: '',
+    };
+    const adminUser = {
+      id: `${id}-admin-1`, name: adminName || name + ' Admin',
+      email: adminEmail, role: 'admin', pin: String(adminPin),
+      schoolId: id, year: '', studentId: '', childIds: [], createdAt: now,
+    };
+
+    await col('schools').insertOne(school);
+    await col('brand').insertOne(brand);
+    await col('users').insertOne(adminUser);
+
+    res.json({ school, adminUser: { ...adminUser } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/super/schools/:id', requireSuper, async (req, res) => {
+  try {
+    const { status } = req.body;
+    await col('schools').updateOne({ id: req.params.id }, { $set: { status } });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/super/stats', requireSuper, async (req, res) => {
+  try {
+    const [schools, students, users] = await Promise.all([
+      col('schools').countDocuments({}),
+      col('students').countDocuments({}),
+      col('users').countDocuments({ role: { $nin: ['superadmin'] } }),
+    ]);
+    res.json({ schools, students, users });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── PRODUCTION STATIC ────────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'dist')));
