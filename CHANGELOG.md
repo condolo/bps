@@ -4,6 +4,26 @@ All notable changes to BPS are documented here.
 
 ---
 
+## [3.3.0] — 2026-05-11
+
+### Changed
+- **Default URL (`/`) now loads Demo School directly** — no landing page, no school selector shown publicly
+- **Removed landing page** (`LandingPage.jsx` deleted) — SAA and all registered schools are private, accessible only via their dedicated `?school=<id>` links
+- **Renamed demo school** from "Mascit Lab Academy" to "Demo School" everywhere: MongoDB `brand`, `schools`, and `users` collections, `seed-demo.js`, `seed-super-admin.js`, `Login.jsx` quick-login buttons
+- **Demo email domain** changed from `@mascitlab.ac.ke` → `@demo.bps.app` across all 7 demo user accounts
+
+### Security
+- Real school portals no longer appear on any public-facing page — only accessible via private direct links
+
+---
+
+## [3.2.0] — 2026-05-11
+
+### Added
+- **Landing page** (`LandingPage.jsx`) shown at `/` — school selector cards for SAA and Demo *(replaced in v3.3.0)*
+
+---
+
 ## [3.1.0] — 2026-05-11
 
 ### Added

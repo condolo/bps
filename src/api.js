@@ -4,7 +4,7 @@ const BASE = '/api';
 let _schoolId = (() => {
   const param = new URLSearchParams(window.location.search).get('school');
   if (param) return param;
-  try { return JSON.parse(localStorage.getItem('bps_user'))?.schoolId || ''; } catch { return ''; }
+  try { return JSON.parse(localStorage.getItem('bps_user'))?.schoolId || 'demo'; } catch { return 'demo'; }
 })();
 
 export const setSchoolId = id => { _schoolId = id; };

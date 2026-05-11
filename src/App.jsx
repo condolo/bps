@@ -7,7 +7,6 @@ import StaffApp from "./components/StaffApp.jsx";
 import StudentApp from "./components/StudentApp.jsx";
 import ParentApp from "./components/ParentApp.jsx";
 import SuperAdminApp from "./components/SuperAdminApp.jsx";
-import LandingPage from "./components/LandingPage.jsx";
 
 const INIT = {
   students: [], staff: [], logs: [], notifications: [], appeals: [],
@@ -36,11 +35,7 @@ function ErrorScreen({ error, onRetry }) {
   );
 }
 
-const SCHOOL_PARAM = new URLSearchParams(window.location.search).get('school');
-
 export default function App() {
-  // No school selected → show portal selector
-  if (!SCHOOL_PARAM) return <LandingPage />;
 
   const [state, dispatch] = useReducer(reducer, INIT);
   const [user, setUser]   = useState(() => {

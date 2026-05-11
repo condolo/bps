@@ -16,13 +16,13 @@ const QUICK_LOGINS = {
     { label:"Parent",     e:"parent.osei@gmail.com",   p:"7777" },
   ],
   demo: [
-    { label:"Admin",      e:"demo.admin@mascitlab.ac.ke",      p:"0000" },
-    { label:"Pastoral",   e:"demo.pastoral@mascitlab.ac.ke",   p:"1111" },
-    { label:"KS3 Coord",  e:"demo.ks3@mascitlab.ac.ke",        p:"2222" },
-    { label:"Teacher",    e:"demo.teacher@mascitlab.ac.ke",    p:"3333" },
-    { label:"Discipline", e:"demo.discipline@mascitlab.ac.ke", p:"4444" },
-    { label:"Student",    e:"demo.student@mascitlab.ac.ke",    p:"5555" },
-    { label:"Parent",     e:"demo.parent@mascitlab.ac.ke",     p:"6666" },
+    { label:"Admin",      e:"demo.admin@demo.bps.app",      p:"0000" },
+    { label:"Pastoral",   e:"demo.pastoral@demo.bps.app",   p:"1111" },
+    { label:"KS3 Coord",  e:"demo.ks3@demo.bps.app",        p:"2222" },
+    { label:"Teacher",    e:"demo.teacher@demo.bps.app",    p:"3333" },
+    { label:"Discipline", e:"demo.discipline@demo.bps.app", p:"4444" },
+    { label:"Student",    e:"demo.student@demo.bps.app",    p:"5555" },
+    { label:"Parent",     e:"demo.parent@demo.bps.app",     p:"6666" },
   ],
 };
 

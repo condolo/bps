@@ -6,32 +6,32 @@ A multi-tenant SaaS platform for managing student behaviour across schools. Trac
 
 | URL | School | Purpose |
 |-----|--------|---------|
-| `?school=system` | BPS Platform | Super Admin — manage all schools |
-| `?school=saa` | St. Austin's Academy | Production school |
-| `?school=demo` | Mascit Lab Academy | Demo / sales |
+| `/` (default) | Demo School | Public demo — all roles available |
+| `?school=saa` | St. Austin's Academy | Private — direct link only |
+| `?school=system` | BPS Platform | Super Admin — manage all schools (private) |
 
 ## Live Demo
 
-**Demo school (Mascit Lab Academy):** Add `?school=demo` to the app URL  
-**Real school (St. Austin's Academy):** Default or `?school=saa`
+**Demo school (Demo School):** Default URL — no param needed  
+**Real schools:** Direct private links only (e.g. `?school=saa`) — never shown publicly
 
-**Super Admin:** `?school=system`
+**Super Admin:** `?school=system` (private)
 
 | Role | Email | PIN |
 |------|-------|-----|
 | Super Admin | super@bps.app | 9999 |
 
-**Demo school (Mascit Lab Academy):** `?school=demo`
+**Demo school:** default URL
 
 | Role | Email | PIN |
 |------|-------|-----|
-| Admin | demo.admin@mascitlab.ac.ke | 0000 |
-| Pastoral Dean | demo.pastoral@mascitlab.ac.ke | 1111 |
-| KS3 Coordinator | demo.ks3@mascitlab.ac.ke | 2222 |
-| Class Teacher | demo.teacher@mascitlab.ac.ke | 3333 |
-| Discipline | demo.discipline@mascitlab.ac.ke | 4444 |
-| Student | demo.student@mascitlab.ac.ke | 5555 |
-| Parent | demo.parent@mascitlab.ac.ke | 6666 |
+| Admin | demo.admin@demo.bps.app | 0000 |
+| Pastoral Dean | demo.pastoral@demo.bps.app | 1111 |
+| KS3 Coordinator | demo.ks3@demo.bps.app | 2222 |
+| Class Teacher | demo.teacher@demo.bps.app | 3333 |
+| Discipline | demo.discipline@demo.bps.app | 4444 |
+| Student | demo.student@demo.bps.app | 5555 |
+| Parent | demo.parent@demo.bps.app | 6666 |
 
 ## Tech Stack
 
@@ -138,7 +138,7 @@ Set `MONGODB_URI` and `NODE_ENV=production` in Render environment variables.
 **Via script (first-time setup / production seeding):**
 ```bash
 node scripts/seed-super-admin.js   # creates super admin + schools collection
-node scripts/seed-demo.js          # seeds Mascit Lab Academy demo data
+node scripts/seed-demo.js          # seeds Demo School demo data
 node scripts/add-school-ids.js     # tags existing records with schoolId
 ```
 
@@ -147,7 +147,7 @@ node scripts/add-school-ids.js     # tags existing records with schoolId
 ```
 scripts/
 ├── seed-super-admin.js   # Super admin user + schools collection
-├── seed-demo.js          # Mascit Lab Academy demo school + dummy students
+├── seed-demo.js          # Demo School + dummy students
 ├── add-school-ids.js     # Migration: adds schoolId:'saa' to existing records
 └── (migrate-to-mongo.js) # One-time JSON → MongoDB migration (already run)
 ```
@@ -158,4 +158,4 @@ scripts/
 |----|--------|--------|
 | `system` | BPS Platform (Super Admin) | Internal |
 | `saa` | St. Austin's Academy, Nairobi | Production |
-| `demo` | Mascit Lab Academy | Demo |
+| `demo` | Demo School | Demo (default URL) |

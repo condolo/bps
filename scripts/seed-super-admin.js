@@ -30,10 +30,10 @@ const SCHOOLS = [
   },
   {
     id: 'demo',
-    name: 'Mascit Lab Academy',
+    name: 'Demo School',
     motto: 'Learn. Grow. Lead.',
     status: 'active',
-    adminEmail: 'demo.admin@mascitlab.ac.ke',
+    adminEmail: 'demo.admin@demo.bps.app',
     primaryColor: '#0f766e',
     createdAt: now,
   },

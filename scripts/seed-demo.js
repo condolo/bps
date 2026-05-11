@@ -1,4 +1,4 @@
-// Seeds Mascit Lab Academy demo school (schoolId: 'demo')
+// Seeds Demo School (schoolId: 'demo')
 // Run: node scripts/seed-demo.js
 
 const { MongoClient } = require('mongodb');
@@ -13,7 +13,7 @@ const rh = () => HOUSES[Math.floor(Math.random() * 4)];
 
 const BRAND = {
   schoolId: SCHOOL,
-  schoolName: "Mascit Lab Academy",
+  schoolName: "Demo School",
   motto: "Learn. Grow. Lead.",
   logoUrl: "",
   primaryColor: "#0f766e",
@@ -23,7 +23,7 @@ const BRAND = {
   highlightColor: "#f0fdfa",
   borderColor: "#99f6e4",
   address: "Nairobi, Kenya",
-  phone: "", email: "info@mascitlab.ac.ke", website: "",
+  phone: "", email: "info@demo.bps.app", website: "",
   facebook: "", twitter: "", instagram: "", whatsapp: "",
 };
 
@@ -52,15 +52,15 @@ const STUDENTS = [
 
 const USERS = [
   // Staff
-  { id:"d-u01", name:"Demo Admin",        email:"demo.admin@mascitlab.ac.ke",      role:"admin",         pin:"0000", year:"",      studentId:"", childIds:[] },
-  { id:"d-u02", name:"Ms. Akinyi",        email:"demo.pastoral@mascitlab.ac.ke",   role:"dean_pastoral", pin:"1111", year:"",      studentId:"", childIds:[] },
-  { id:"d-u03", name:"Mr. Kamau",         email:"demo.ks3@mascitlab.ac.ke",        role:"ks3",           pin:"2222", year:"",      studentId:"", childIds:[] },
-  { id:"d-u04", name:"Mrs. Njoroge",      email:"demo.teacher@mascitlab.ac.ke",    role:"teacher",       pin:"3333", year:"Y8/1",  studentId:"", childIds:[] },
-  { id:"d-u05", name:"Mr. Odhiambo",      email:"demo.discipline@mascitlab.ac.ke", role:"discipline",    pin:"4444", year:"",      studentId:"", childIds:[] },
+  { id:"d-u01", name:"Demo Admin",        email:"demo.admin@demo.bps.app",      role:"admin",         pin:"0000", year:"",      studentId:"", childIds:[] },
+  { id:"d-u02", name:"Ms. Akinyi",        email:"demo.pastoral@demo.bps.app",   role:"dean_pastoral", pin:"1111", year:"",      studentId:"", childIds:[] },
+  { id:"d-u03", name:"Mr. Kamau",         email:"demo.ks3@demo.bps.app",        role:"ks3",           pin:"2222", year:"",      studentId:"", childIds:[] },
+  { id:"d-u04", name:"Mrs. Njoroge",      email:"demo.teacher@demo.bps.app",    role:"teacher",       pin:"3333", year:"Y8/1",  studentId:"", childIds:[] },
+  { id:"d-u05", name:"Mr. Odhiambo",      email:"demo.discipline@demo.bps.app", role:"discipline",    pin:"4444", year:"",      studentId:"", childIds:[] },
   // Student
-  { id:"d-u06", name:"Alex Mugo",         email:"demo.student@mascitlab.ac.ke",    role:"student",       pin:"5555", year:"Y7/1",  studentId:"d-s01", childIds:[] },
+  { id:"d-u06", name:"Alex Mugo",         email:"demo.student@demo.bps.app",    role:"student",       pin:"5555", year:"Y7/1",  studentId:"d-s01", childIds:[] },
   // Parent
-  { id:"d-u07", name:"Mrs. Mugo",         email:"demo.parent@mascitlab.ac.ke",     role:"parent",        pin:"6666", year:"",      studentId:"", childIds:["d-s01"] },
+  { id:"d-u07", name:"Mrs. Mugo",         email:"demo.parent@demo.bps.app",     role:"parent",        pin:"6666", year:"",      studentId:"", childIds:["d-s01"] },
 ].map(u => ({ ...u, schoolId: SCHOOL, createdAt: now }));
 
 const T = Date.now();
@@ -94,7 +94,7 @@ async function run() {
   await db.collection('notifications').insertMany(NOTIFS);
 
   console.log(`Demo school seeded:`);
-  console.log(`  Brand:         Mascit Lab Academy`);
+  console.log(`  Brand:         Demo School`);
   console.log(`  Students:      ${STUDENTS.length}`);
   console.log(`  Users:         ${USERS.length}`);
   console.log(`  Logs:          ${LOGS.length}`);
