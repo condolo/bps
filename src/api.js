@@ -1,10 +1,10 @@
 const BASE = '/api';
 
-// School context — resolved from URL param, then localStorage session
+// School context — resolved from URL param, then stored session
 let _schoolId = (() => {
   const param = new URLSearchParams(window.location.search).get('school');
   if (param) return param;
-  try { return JSON.parse(localStorage.getItem('bps_user'))?.schoolId || 'saa'; } catch { return 'saa'; }
+  try { return JSON.parse(localStorage.getItem('bps_user'))?.schoolId || ''; } catch { return ''; }
 })();
 
 export const setSchoolId = id => { _schoolId = id; };
