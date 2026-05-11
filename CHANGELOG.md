@@ -4,6 +4,29 @@ All notable changes to BPS are documented here.
 
 ---
 
+## [3.1.0] — 2026-05-11
+
+### Added
+- **Super Admin portal** — dedicated management interface at `?school=system`
+- `SuperAdminApp.jsx` — platform-wide dashboard with schools table, stats, register form
+- Stats bar: total schools, total students, total users across all tenants
+- Schools table: name, ID, student / staff / parent counts, status badge, Open and Disable/Enable actions
+- **Register School** form — creates brand + admin account in one step; displays credentials in a success banner
+- **Enable / Disable school** — toggle school status without deleting data
+- `/api/super/schools` (GET / POST) and `/api/super/stats` (GET) — protected by `requireSuper` middleware (403 if not `schoolId: system`)
+- `/api/super/schools/:id` (PATCH) — update school status
+- `scripts/seed-super-admin.js` — creates `super@bps.app` / PIN `9999` and populates `schools` collection
+- `BPS Platform` brand for the `?school=system` login page (indigo theme)
+- Super Admin quick-login button shown only on `?school=system`
+- `schools` MongoDB collection tracks each tenant: id, name, motto, status, adminEmail, primaryColor, createdAt
+
+### Changed
+- `App.jsx` — routes `role: superadmin` to `SuperAdminApp` (bypasses all school data loading)
+- `Login.jsx` — `QUICK_LOGINS.system` entry with Super Admin only
+- `api.js` — four new super admin methods: `superStats`, `superSchools`, `superRegister`, `superUpdateSchool`
+
+---
+
 ## [3.0.0] — 2026-05-11
 
 ### Added

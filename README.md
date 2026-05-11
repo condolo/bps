@@ -2,12 +2,26 @@
 
 A multi-tenant SaaS platform for managing student behaviour across schools. Track merits, demerits, interventions, appeals, and house standings — accessible from any device.
 
+## Portals
+
+| URL | School | Purpose |
+|-----|--------|---------|
+| `?school=system` | BPS Platform | Super Admin — manage all schools |
+| `?school=saa` | St. Austin's Academy | Production school |
+| `?school=demo` | Mascit Lab Academy | Demo / sales |
+
 ## Live Demo
 
 **Demo school (Mascit Lab Academy):** Add `?school=demo` to the app URL  
 **Real school (St. Austin's Academy):** Default or `?school=saa`
 
-Demo accounts (Mascit Lab Academy):
+**Super Admin:** `?school=system`
+
+| Role | Email | PIN |
+|------|-------|-----|
+| Super Admin | super@bps.app | 9999 |
+
+**Demo school (Mascit Lab Academy):** `?school=demo`
 
 | Role | Email | PIN |
 |------|-------|-----|
@@ -55,7 +69,8 @@ BPP/
 
 ## API Endpoints
 
-All endpoints require `X-School-Id` header (e.g. `saa` or `demo`).
+### School endpoints
+All require `X-School-Id` header (e.g. `saa` or `demo`).
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -71,6 +86,16 @@ All endpoints require `X-School-Id` header (e.g. `saa` or `demo`).
 | GET/POST | /api/appeals | List / submit appeal |
 | PATCH | /api/appeals/:id | Resolve appeal or add parent note |
 | GET/PUT | /api/brand | Get / update school brand settings |
+
+### Super Admin endpoints
+Require `X-School-Id: system`. Return 403 for any other school.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/super/stats | Platform-wide counts (schools, students, users) |
+| GET | /api/super/schools | All schools with live student/staff/parent counts |
+| POST | /api/super/schools | Register new school (creates brand + admin account) |
+| PATCH | /api/super/schools/:id | Update school status (active/inactive) |
 
 ## Environment Variables
 
@@ -104,12 +129,33 @@ Set `MONGODB_URI` and `NODE_ENV=production` in Render environment variables.
 
 ## Adding a New School
 
-1. Run `SCHOOL_ID=newschool SCHOOL_NAME="New School" node scripts/seed-school.js`
-2. Access via `?school=newschool`
+**Via Super Admin portal (recommended):**
+1. Go to `?school=system` → login as `super@bps.app` / `9999`
+2. Click **Register School** → fill the form → submit
+3. Admin credentials appear instantly in a success banner
+4. School is live immediately at `?school=<id>`
+
+**Via script (first-time setup / production seeding):**
+```bash
+node scripts/seed-super-admin.js   # creates super admin + schools collection
+node scripts/seed-demo.js          # seeds Mascit Lab Academy demo data
+node scripts/add-school-ids.js     # tags existing records with schoolId
+```
+
+## File Structure (scripts)
+
+```
+scripts/
+├── seed-super-admin.js   # Super admin user + schools collection
+├── seed-demo.js          # Mascit Lab Academy demo school + dummy students
+├── add-school-ids.js     # Migration: adds schoolId:'saa' to existing records
+└── (migrate-to-mongo.js) # One-time JSON → MongoDB migration (already run)
+```
 
 ## Schools
 
 | ID | School | Status |
 |----|--------|--------|
+| `system` | BPS Platform (Super Admin) | Internal |
 | `saa` | St. Austin's Academy, Nairobi | Production |
 | `demo` | Mascit Lab Academy | Demo |
