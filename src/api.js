@@ -1,9 +1,22 @@
 const BASE = '/api';
 
+// School context — resolved from URL param, then localStorage session
+let _schoolId = (() => {
+  const param = new URLSearchParams(window.location.search).get('school');
+  if (param) return param;
+  try { return JSON.parse(localStorage.getItem('bps_user'))?.schoolId || 'saa'; } catch { return 'saa'; }
+})();
+
+export const setSchoolId = id => { _schoolId = id; };
+export const getSchoolId = () => _schoolId;
+
 async function req(method, path, body) {
   const res = await fetch(BASE + path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
+    headers: {
+      'X-School-Id': _schoolId,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
@@ -28,18 +41,18 @@ export const api = {
       students, staff, logs, notifications, appeals, brand,
     })),
 
-  addStudent:      (s)           => req('POST',   '/students',           s),
-  addStudentsBulk: (students)    => req('POST',   '/students/bulk',      { students }),
-  deleteStudent:   (id)          => req('DELETE',  `/students/${id}`),
+  addStudent:      (s)        => req('POST',   '/students',      s),
+  addStudentsBulk: (students) => req('POST',   '/students/bulk', { students }),
+  deleteStudent:   (id)       => req('DELETE', `/students/${id}`),
 
-  addUser:   (u)  => req('POST',   '/users',   u),
+  addUser:    (u)  => req('POST',   '/users',   u),
   deleteUser: (id) => req('DELETE', `/users/${id}`),
 
-  addLog:   (log, notifs) => req('POST', '/logs', { log, notifs }),
+  addLog:  (log, notifs) => req('POST', '/logs', { log, notifs }),
 
   markRead:      (id, uid)  => req('PATCH', `/notifications/${id}/read`, { uid }),
 
-  submitAppeal:  (appeal, logId) => req('POST',  '/appeals',      { appeal, logId }),
+  submitAppeal:  (appeal, logId) => req('POST',  '/appeals',       { appeal, logId }),
   resolveAppeal: (id, data)      => req('PATCH', `/appeals/${id}`, data),
   parentNote:    (id, note)      => req('PATCH', `/appeals/${id}`, { parentNote: note }),
 

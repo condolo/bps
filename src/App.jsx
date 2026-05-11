@@ -1,5 +1,5 @@
 import { useState, useEffect, useReducer, useCallback } from "react";
-import { api } from "./api.js";
+import { api, setSchoolId, getSchoolId } from "./api.js";
 import { reducer } from "./reducer.js";
 import { HOUSES, DEFAULT_BRAND } from "./constants.js";
 import Login from "./components/Login.jsx";
@@ -37,7 +37,12 @@ function ErrorScreen({ error, onRetry }) {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, INIT);
   const [user, setUser]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem("bps_user")); } catch { return null; }
+    try {
+      const stored = JSON.parse(localStorage.getItem("bps_user"));
+      // If stored user's school matches current URL school context, restore session
+      if (stored && stored.schoolId === getSchoolId()) return stored;
+      return null;
+    } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
@@ -54,8 +59,11 @@ export default function App() {
 
   const handleLogin = useCallback(async (email, pin) => {
     const u = await api.login(email, pin);
+    setSchoolId(u.schoolId || getSchoolId());
     localStorage.setItem("bps_user", JSON.stringify(u));
     setUser(u);
+    // Reload data scoped to the logged-in school
+    loadData();
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -63,33 +71,21 @@ export default function App() {
     setUser(null);
   }, []);
 
-  // Optimistic dispatch: update local state immediately, then sync to server
   const serverDispatch = useCallback(async (action) => {
     dispatch(action);
     try {
       switch (action.type) {
-        case "ADD_STUDENT":
-          await api.addStudent(action.s); break;
-        case "ADD_STUDENTS_BULK":
-          await api.addStudentsBulk(action.list); break;
-        case "DELETE_STUDENT":
-          await api.deleteStudent(action.id); break;
-        case "ADD_STAFF":
-          await api.addUser(action.s); break;
-        case "DELETE_STAFF":
-          await api.deleteUser(action.id); break;
-        case "ADD_LOG":
-          await api.addLog(action.log, action.notifs); break;
-        case "MARK_READ":
-          await api.markRead(action.id, action.uid); break;
-        case "SUBMIT_APPEAL":
-          await api.submitAppeal(action.appeal, action.logId); break;
-        case "RESOLVE_APPEAL":
-          await api.resolveAppeal(action.id, { resolution: action.resolution, by: action.by, note: action.note }); break;
-        case "UPDATE_PARENT_NOTE":
-          await api.parentNote(action.id, action.note); break;
-        case "UPDATE_BRAND":
-          await api.updateBrand({ ...state.brand, ...action.brand }); break;
+        case "ADD_STUDENT":         await api.addStudent(action.s); break;
+        case "ADD_STUDENTS_BULK":   await api.addStudentsBulk(action.list); break;
+        case "DELETE_STUDENT":      await api.deleteStudent(action.id); break;
+        case "ADD_STAFF":           await api.addUser(action.s); break;
+        case "DELETE_STAFF":        await api.deleteUser(action.id); break;
+        case "ADD_LOG":             await api.addLog(action.log, action.notifs); break;
+        case "MARK_READ":           await api.markRead(action.id, action.uid); break;
+        case "SUBMIT_APPEAL":       await api.submitAppeal(action.appeal, action.logId); break;
+        case "RESOLVE_APPEAL":      await api.resolveAppeal(action.id, { resolution: action.resolution, by: action.by, note: action.note }); break;
+        case "UPDATE_PARENT_NOTE":  await api.parentNote(action.id, action.note); break;
+        case "UPDATE_BRAND":        await api.updateBrand({ ...state.brand, ...action.brand }); break;
         default: break;
       }
     } catch (err) {
@@ -100,9 +96,10 @@ export default function App() {
   if (loading) return <LoadingScreen />;
   if (error)   return <ErrorScreen error={error} onRetry={loadData} />;
 
+  const schoolId = getSchoolId();
   const props = { state, dispatch: serverDispatch, user, onLogout: handleLogout, brand: state.brand };
 
-  if (!user)                    return <Login state={state} onLogin={handleLogin} brand={state.brand} />;
+  if (!user)                    return <Login state={state} onLogin={handleLogin} brand={state.brand} schoolId={schoolId} />;
   if (user.role === "student")  return <StudentApp {...props} />;
   if (user.role === "parent")   return <ParentApp  {...props} />;
   return <StaffApp {...props} />;

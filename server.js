@@ -37,10 +37,17 @@ let mdb; // MongoDB database handle
 const col = name => mdb.collection(name);
 const noId = { projection: { _id: 0 } };
 
+// Inject schoolId from header on every request
+app.use((req, res, next) => {
+  req.schoolId = (req.headers['x-school-id'] || 'saa').toLowerCase();
+  next();
+});
+
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, pin } = req.body;
+    // Login searches across all schools — schoolId is embedded in the user record
     const user = await col('users').findOne(
       { email: { $regex: new RegExp(`^${(email||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}$`, 'i') }, pin: String(pin) },
       noId
@@ -51,16 +58,16 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // ─── STUDENTS ─────────────────────────────────────────────────────────────────
-app.get('/api/students', async (_, res) => {
+app.get('/api/students', async (req, res) => {
   try {
-    res.json(await col('students').find({}, noId).toArray());
+    res.json(await col('students').find({ schoolId: req.schoolId }, noId).toArray());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/students', async (req, res) => {
   try {
-    const s = req.body;
-    await col('students').updateOne({ id: s.id }, { $setOnInsert: s }, { upsert: true });
+    const s = { ...req.body, schoolId: req.schoolId };
+    await col('students').updateOne({ id: s.id, schoolId: req.schoolId }, { $setOnInsert: s }, { upsert: true });
     res.json(s);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -70,9 +77,9 @@ app.post('/api/students/bulk', async (req, res) => {
     const incoming = (req.body.students || []);
     if (!incoming.length) return res.json({ count: 0, students: [] });
     const existing = new Set(
-      (await col('students').find({}, { projection: { _id: 0, name: 1 } }).toArray()).map(s => s.name.toLowerCase())
+      (await col('students').find({ schoolId: req.schoolId }, { projection: { _id: 0, name: 1 } }).toArray()).map(s => s.name.toLowerCase())
     );
-    const newOnes = incoming.filter(s => !existing.has(s.name.toLowerCase()));
+    const newOnes = incoming.filter(s => !existing.has(s.name.toLowerCase())).map(s => ({ ...s, schoolId: req.schoolId }));
     if (newOnes.length) await col('students').insertMany(newOnes);
     res.json({ count: newOnes.length, students: newOnes });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -80,24 +87,24 @@ app.post('/api/students/bulk', async (req, res) => {
 
 app.delete('/api/students/:id', async (req, res) => {
   try {
-    await col('students').deleteOne({ id: req.params.id });
-    await col('logs').deleteMany({ studentId: req.params.id });
+    await col('students').deleteOne({ id: req.params.id, schoolId: req.schoolId });
+    await col('logs').deleteMany({ studentId: req.params.id, schoolId: req.schoolId });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── USERS ────────────────────────────────────────────────────────────────────
-app.get('/api/users', async (_, res) => {
+app.get('/api/users', async (req, res) => {
   try {
-    res.json(await col('users').find({}, noId).toArray());
+    res.json(await col('users').find({ schoolId: req.schoolId }, noId).toArray());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/users', async (req, res) => {
   try {
-    const u = req.body;
+    const u = { ...req.body, schoolId: req.schoolId };
     const exists = await col('users').findOne(
-      { email: { $regex: new RegExp(`^${u.email.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}$`, 'i') } }
+      { email: { $regex: new RegExp(`^${u.email.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}$`, 'i') }, schoolId: req.schoolId }
     );
     if (exists) return res.status(400).json({ error: 'Email already registered.' });
     await col('users').insertOne({ ...u });
@@ -107,31 +114,31 @@ app.post('/api/users', async (req, res) => {
 
 app.delete('/api/users/:id', async (req, res) => {
   try {
-    await col('users').deleteOne({ id: req.params.id });
+    await col('users').deleteOne({ id: req.params.id, schoolId: req.schoolId });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── LOGS ─────────────────────────────────────────────────────────────────────
-app.get('/api/logs', async (_, res) => {
+app.get('/api/logs', async (req, res) => {
   try {
-    res.json(await col('logs').find({}, noId).toArray());
+    res.json(await col('logs').find({ schoolId: req.schoolId }, noId).toArray());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/logs', async (req, res) => {
   try {
     const { log, notifs = [] } = req.body;
-    await col('logs').insertOne({ ...log });
-    if (notifs.length) await col('notifications').insertMany(notifs.map(n => ({ ...n })));
+    await col('logs').insertOne({ ...log, schoolId: req.schoolId });
+    if (notifs.length) await col('notifications').insertMany(notifs.map(n => ({ ...n, schoolId: req.schoolId })));
     res.json({ log, notifs });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
-app.get('/api/notifications', async (_, res) => {
+app.get('/api/notifications', async (req, res) => {
   try {
-    const notifs = await col('notifications').find({}, noId).sort({ timestamp: -1 }).toArray();
+    const notifs = await col('notifications').find({ schoolId: req.schoolId }, noId).sort({ timestamp: -1 }).toArray();
     res.json(notifs);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -149,18 +156,18 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
 });
 
 // ─── APPEALS ──────────────────────────────────────────────────────────────────
-app.get('/api/appeals', async (_, res) => {
+app.get('/api/appeals', async (req, res) => {
   try {
-    res.json(await col('appeals').find({}, noId).toArray());
+    res.json(await col('appeals').find({ schoolId: req.schoolId }, noId).toArray());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/appeals', async (req, res) => {
   try {
     const { appeal, logId } = req.body;
-    const doc = { ...appeal, status: 'pending', parentNote: '', resolvedBy: '', resolvedNote: '', resolvedAt: 0 };
+    const doc = { ...appeal, schoolId: req.schoolId, status: 'pending', parentNote: '', resolvedBy: '', resolvedNote: '', resolvedAt: 0 };
     await col('appeals').insertOne({ ...doc });
-    await col('logs').updateOne({ id: logId }, { $set: { status: 'appealing' } });
+    await col('logs').updateOne({ id: logId, schoolId: req.schoolId }, { $set: { status: 'appealing' } });
     res.json(appeal);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -173,32 +180,36 @@ app.patch('/api/appeals/:id', async (req, res) => {
       update = { $set: { parentNote } };
     } else if (resolution) {
       update = { $set: { status: resolution, resolvedBy: by || '', resolvedNote: note || '', resolvedAt: Date.now() } };
-      const appeal = await col('appeals').findOne({ id: req.params.id }, noId);
+      const appeal = await col('appeals').findOne({ id: req.params.id, schoolId: req.schoolId }, noId);
       if (appeal) {
         await col('logs').updateOne(
-          { id: appeal.logId },
+          { id: appeal.logId, schoolId: req.schoolId },
           { $set: { status: resolution === 'accepted' ? 'overturned' : 'active' } }
         );
       }
     }
-    const result = await col('appeals').findOneAndUpdate({ id: req.params.id }, update, { returnDocument: 'after', projection: { _id: 0 } });
+    const result = await col('appeals').findOneAndUpdate(
+      { id: req.params.id, schoolId: req.schoolId }, update,
+      { returnDocument: 'after', projection: { _id: 0 } }
+    );
     if (!result) return res.status(404).json({ error: 'Not found' });
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── BRAND ────────────────────────────────────────────────────────────────────
-app.get('/api/brand', async (_, res) => {
+app.get('/api/brand', async (req, res) => {
   try {
-    const brand = await col('brand').findOne({}, noId);
+    const brand = await col('brand').findOne({ schoolId: req.schoolId }, noId);
     res.json(brand || DEFAULT_BRAND);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/brand', async (req, res) => {
   try {
-    await col('brand').replaceOne({}, req.body, { upsert: true });
-    res.json(req.body);
+    const brand = { ...req.body, schoolId: req.schoolId };
+    await col('brand').replaceOne({ schoolId: req.schoolId }, brand, { upsert: true });
+    res.json(brand);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

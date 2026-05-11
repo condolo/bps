@@ -2,21 +2,34 @@ import { useState } from "react";
 import { BrandLogo } from "./Shared.jsx";
 import { lbl, inp, btnS } from "../styles.js";
 
-const DEMOS = [
-  { label:"Admin",      e:"admin@staustin.ac.ke",   p:"0000" },
-  { label:"Pastoral",   e:"kamau@staustin.ac.ke",   p:"1111" },
-  { label:"KS3 Coord",  e:"otieno@staustin.ac.ke",  p:"2222" },
-  { label:"Teacher",    e:"wanjiku@staustin.ac.ke",  p:"3333" },
-  { label:"Discipline", e:"disc@staustin.ac.ke",     p:"4444" },
-  { label:"Student",    e:"amara@staustin.ac.ke",    p:"5555" },
-  { label:"Parent",     e:"parent.osei@gmail.com",   p:"7777" },
-];
+const QUICK_LOGINS = {
+  saa: [
+    { label:"Admin",      e:"admin@staustin.ac.ke",   p:"0000" },
+    { label:"Pastoral",   e:"kamau@staustin.ac.ke",   p:"1111" },
+    { label:"KS3 Coord",  e:"otieno@staustin.ac.ke",  p:"2222" },
+    { label:"Teacher",    e:"wanjiku@staustin.ac.ke",  p:"3333" },
+    { label:"Discipline", e:"disc@staustin.ac.ke",     p:"4444" },
+    { label:"Student",    e:"amara@staustin.ac.ke",    p:"5555" },
+    { label:"Parent",     e:"parent.osei@gmail.com",   p:"7777" },
+  ],
+  demo: [
+    { label:"Admin",      e:"demo.admin@mascitlab.ac.ke",      p:"0000" },
+    { label:"Pastoral",   e:"demo.pastoral@mascitlab.ac.ke",   p:"1111" },
+    { label:"KS3 Coord",  e:"demo.ks3@mascitlab.ac.ke",        p:"2222" },
+    { label:"Teacher",    e:"demo.teacher@mascitlab.ac.ke",    p:"3333" },
+    { label:"Discipline", e:"demo.discipline@mascitlab.ac.ke", p:"4444" },
+    { label:"Student",    e:"demo.student@mascitlab.ac.ke",    p:"5555" },
+    { label:"Parent",     e:"demo.parent@mascitlab.ac.ke",     p:"6666" },
+  ],
+};
 
-export default function Login({ onLogin, brand }) {
+export default function Login({ onLogin, brand, schoolId }) {
   const [email,   setEmail]   = useState("");
   const [pin,     setPin]     = useState("");
   const [err,     setErr]     = useState("");
   const [loading, setLoading] = useState(false);
+
+  const demos = QUICK_LOGINS[schoolId] || QUICK_LOGINS.saa;
 
   async function doLogin() {
     if (!email || !pin) { setErr("Please enter email and PIN."); return; }
@@ -48,7 +61,7 @@ export default function Login({ onLogin, brand }) {
 
         <div style={{marginBottom:12}}>
           <label style={lbl}>Email</label>
-          <input value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} onKeyDown={handleKey} style={inp} placeholder="your@staustin.ac.ke" autoFocus />
+          <input value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} onKeyDown={handleKey} style={inp} placeholder="your@school.ac.ke" autoFocus />
         </div>
         <div style={{marginBottom:18}}>
           <label style={lbl}>PIN</label>
@@ -64,8 +77,9 @@ export default function Login({ onLogin, brand }) {
         <div style={{marginTop:16,background:brand.highlightColor,borderRadius:10,padding:12}}>
           <div style={{fontSize:11,color:brand.primaryColor,fontWeight:700,marginBottom:8}}>QUICK LOGIN</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-            {DEMOS.map(d => (
-              <button key={d.e} onClick={() => { setEmail(d.e); setPin(d.p); setErr(""); }} style={{padding:"4px 10px",background:brand.highlightColor,border:`1px solid ${brand.borderColor}`,borderRadius:20,fontSize:11,cursor:"pointer",color:brand.primaryColor,fontWeight:600}}>
+            {demos.map(d => (
+              <button key={d.e} onClick={() => { setEmail(d.e); setPin(d.p); setErr(""); }}
+                style={{padding:"4px 10px",background:brand.highlightColor,border:`1px solid ${brand.borderColor}`,borderRadius:20,fontSize:11,cursor:"pointer",color:brand.primaryColor,fontWeight:600}}>
                 {d.label}
               </button>
             ))}
