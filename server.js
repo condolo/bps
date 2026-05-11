@@ -12,7 +12,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, X-School-Id');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -109,6 +109,34 @@ app.post('/api/users', async (req, res) => {
     if (exists) return res.status(400).json({ error: 'Email already registered.' });
     await col('users').insertOne({ ...u });
     res.json(u);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/users/:id', async (req, res) => {
+  try {
+    const update = { ...req.body };
+    delete update.schoolId;
+    if (update.pin === '') delete update.pin;
+    const result = await col('users').findOneAndUpdate(
+      { id: req.params.id, schoolId: req.schoolId },
+      { $set: update },
+      { returnDocument: 'after', projection: { _id: 0 } }
+    );
+    if (!result) return res.status(404).json({ error: 'User not found' });
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/users/bulk', async (req, res) => {
+  try {
+    const incoming = (req.body.users || []);
+    if (!incoming.length) return res.json({ count: 0, users: [] });
+    const existing = new Set(
+      (await col('users').find({ schoolId: req.schoolId }, { projection: { _id: 0, email: 1 } }).toArray()).map(u => u.email.toLowerCase())
+    );
+    const newOnes = incoming.filter(u => !existing.has(u.email.toLowerCase())).map(u => ({ ...u, schoolId: req.schoolId }));
+    if (newOnes.length) await col('users').insertMany(newOnes);
+    res.json({ count: newOnes.length, users: newOnes });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -210,6 +238,33 @@ app.put('/api/brand', async (req, res) => {
     const brand = { ...req.body, schoolId: req.schoolId };
     await col('brand').replaceOne({ schoolId: req.schoolId }, brand, { upsert: true });
     res.json(brand);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── MATRIX ───────────────────────────────────────────────────────────────────
+app.get('/api/matrix', async (req, res) => {
+  try {
+    const doc = await col('settings').findOne({ schoolId: req.schoolId, key: 'matrix' }, noId);
+    res.json(doc ? doc.value : null);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/matrix', async (req, res) => {
+  try {
+    const value = req.body;
+    await col('settings').replaceOne(
+      { schoolId: req.schoolId, key: 'matrix' },
+      { schoolId: req.schoolId, key: 'matrix', value },
+      { upsert: true }
+    );
+    res.json(value);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/matrix', async (req, res) => {
+  try {
+    await col('settings').deleteOne({ schoolId: req.schoolId, key: 'matrix' });
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

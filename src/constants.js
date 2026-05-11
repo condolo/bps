@@ -27,6 +27,8 @@ export const ROLES = [
   { id:"dean_pastoral", label:"Dean of Pastoral" },
   { id:"dean_academic", label:"Dean of Academics" },
   { id:"discipline",    label:"Discipline Committee" },
+  { id:"counselor",     label:"School Counselor" },
+  { id:"safeguarding",  label:"Safeguarding Officer" },
   { id:"ks3",           label:"KS3 Coordinator" },
   { id:"ks4",           label:"KS4 Coordinator" },
   { id:"ks5",           label:"KS5 Coordinator" },
@@ -35,8 +37,8 @@ export const ROLES = [
   { id:"parent",        label:"Parent" },
 ];
 
-export const SENIOR = ["admin","principal","dean_pastoral","dean_academic","discipline"];
-export const STAFF_ROLES = ["admin","principal","dean_pastoral","dean_academic","discipline","ks3","ks4","ks5","teacher"];
+export const SENIOR = ["admin","principal","dean_pastoral","dean_academic","discipline","counselor","safeguarding"];
+export const STAFF_ROLES = ["admin","principal","dean_pastoral","dean_academic","discipline","counselor","safeguarding","ks3","ks4","ks5","teacher"];
 
 export const MILESTONES = [
   { pts:25,  badge:"Bronze",            icon:"🥉", color:"#92400e" },

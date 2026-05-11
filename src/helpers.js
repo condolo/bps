@@ -46,10 +46,9 @@ export function studentMilestone(allML, sid) {
   return [...MILESTONES].reverse().find(m => t >= m.pts) || null;
 }
 
-export function behavLabel(id) {
-  let l = "Unknown";
-  MATRIX.forEach(c => { const it = c.items.find(i => i.id===id); if (it) l = it.label; });
-  return l;
+export function behavLabel(id, customMatrix) {
+  const search = m => { for (const c of m) { const it = c.items.find(i => i.id===id); if (it) return it.label; } return null; };
+  return (customMatrix && search(customMatrix)) || search(MATRIX) || 'Unknown';
 }
 
 export function fmtDate(ts) {

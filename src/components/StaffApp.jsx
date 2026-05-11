@@ -210,7 +210,7 @@ function RoleDash({ state, user, filtLogs, htLogs, allML, sortedStudents, sorted
             const s = state.students.find(x=>x.id===log.studentId);
             return (
               <div key={log.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>
-                <span>{s?.name||"—"} · <span style={{color:"#64748b"}}>{behavLabel(log.behaviourId)}</span></span>
+                <span>{s?.name||"—"} · <span style={{color:"#64748b"}}>{behavLabel(log.behaviourId, state.customMatrix)}</span></span>
                 <span style={{fontWeight:700,color:c(log.points)}}>{log.points>0?"+":""}{log.points}</span>
               </div>
             );
@@ -253,7 +253,7 @@ function RoleDash({ state, user, filtLogs, htLogs, allML, sortedStudents, sorted
               <div key={log.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #f1f5f9",fontSize:13}}>
                 <div>
                   <span style={{fontWeight:600}}>{s?.name||"—"}</span>
-                  <span style={{color:"#64748b"}}> · {behavLabel(log.behaviourId)}</span>
+                  <span style={{color:"#64748b"}}> · {behavLabel(log.behaviourId, state.customMatrix)}</span>
                   {log.note && <div style={{fontSize:11,color:"#94a3b8",fontStyle:"italic"}}>{log.note}</div>}
                 </div>
                 <div style={{textAlign:"right"}}>
@@ -287,6 +287,7 @@ function RoleDash({ state, user, filtLogs, htLogs, allML, sortedStudents, sorted
 
 // ─── AWARD POINTS ─────────────────────────────────────────────────────────────
 function Award({ state, dispatch, user, htLogs, allML }) {
+  const matrix = state.customMatrix || MATRIX;
   const [step,    setStep]    = useState(1);
   const [search,  setSearch]  = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -313,7 +314,7 @@ function Award({ state, dispatch, user, htLogs, allML }) {
   }
 
   const student    = state.students.find(s=>s.id===sid);
-  const cat        = MATRIX[catIdx];
+  const cat        = matrix[catIdx] || matrix[0];
   const catItems   = cat.items.filter(i => type==="merit" ? i.merit!==null : i.demerit!==null);
   const pts        = behav ? (type==="merit" ? behav.merit : behav.demerit) : null;
   const isSerious  = pts!==null && pts<=-5;
@@ -431,7 +432,7 @@ function Award({ state, dispatch, user, htLogs, allML }) {
           <div style={{marginBottom:12}}>
             <label style={lbl}>Category</label>
             <select value={catIdx} onChange={e => { setCatIdx(+e.target.value); setBehav(null); }} style={inp}>
-              {MATRIX.map((cat,i) => {
+              {matrix.map((cat,i) => {
                 const has = cat.items.some(it => type==="merit" ? it.merit!==null : it.demerit!==null);
                 return has ? <option key={i} value={i}>{cat.category}</option> : null;
               })}
@@ -814,7 +815,7 @@ function AppealsPanel({ state, dispatch, user, myAppeals }) {
             </div>
             <div style={{background:"#fef3c7",borderRadius:8,padding:12,marginBottom:10}}>
               <div style={{fontSize:12,fontWeight:700,color:"#92400e",marginBottom:4}}>Behaviour logged:</div>
-              <div style={{fontSize:13}}>{behavLabel(log?.behaviourId)}</div>
+              <div style={{fontSize:13}}>{behavLabel(log?.behaviourId, state.customMatrix)}</div>
               {log?.note && <div style={{fontSize:12,color:"#64748b",marginTop:4,fontStyle:"italic"}}>Note: {log.note}</div>}
             </div>
             <div style={{background:"#eff6ff",borderRadius:8,padding:12,marginBottom:12}}>
@@ -847,7 +848,7 @@ function AppealsPanel({ state, dispatch, user, myAppeals }) {
               <div key={a.id} style={{background:"white",borderRadius:10,padding:"12px 16px",border:"1px solid #e2e8f0",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
                   <span style={{fontWeight:600,fontSize:13}}>{student?.name}</span>
-                  <span style={{color:"#64748b",fontSize:12}}> · {behavLabel(state.logs.find(l=>l.id===a.logId)?.behaviourId)}</span>
+                  <span style={{color:"#64748b",fontSize:12}}> · {behavLabel(state.logs.find(l=>l.id===a.logId)?.behaviourId, state.customMatrix)}</span>
                 </div>
                 <span style={{fontSize:12,background:a.status==="accepted"?"#dcfce7":"#fee2e2",color:a.status==="accepted"?"#16a34a":"#dc2626",padding:"2px 8px",borderRadius:10,fontWeight:700}}>{a.status}</span>
               </div>
@@ -860,73 +861,382 @@ function AppealsPanel({ state, dispatch, user, myAppeals }) {
 }
 
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
-function AdminPanel({ state, dispatch }) {
-  const [open, setOpen] = useState(false);
-  const [f,    setF]    = useState({ name:"", email:"", role:"teacher", year:"", pin:"", pin2:"", studentId:"", childIds:[] });
-  const [err,  setErr]  = useState("");
-  const [ok,   setOk]   = useState(false);
+function AdminPanel({ state, dispatch, brand }) {
+  const [tab, setTab] = useState("users");
+  const tabs = [["users","Users"],["houses","Houses"],["matrix","Behaviour Matrix"]];
+  return (
+    <div>
+      <h2 style={{fontSize:17,marginBottom:0}}>Admin Panel</h2>
+      <div style={{display:"flex",gap:0,marginBottom:16,borderBottom:"2px solid #e2e8f0",marginTop:10}}>
+        {tabs.map(([id,label]) => (
+          <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 16px",border:"none",background:"none",cursor:"pointer",fontWeight:tab===id?700:400,color:tab===id?brand.primaryColor:"#64748b",borderBottom:tab===id?`2px solid ${brand.primaryColor}`:"2px solid transparent",fontSize:13,marginBottom:-2}}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab==="users"  && <UsersManager  state={state} dispatch={dispatch} brand={brand} />}
+      {tab==="houses" && <HousesEditor  state={state} dispatch={dispatch} brand={brand} />}
+      {tab==="matrix" && <MatrixEditor  state={state} dispatch={dispatch} brand={brand} />}
+    </div>
+  );
+}
+
+// ─── USERS MANAGER ────────────────────────────────────────────────────────────
+function UsersManager({ state, dispatch, brand }) {
+  const [addOpen,  setAddOpen]  = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [f, setF] = useState({ name:"",email:"",role:"teacher",year:"",pin:"",pin2:"",studentId:"",childIds:[] });
+  const [err, setErr] = useState("");
+  const [ok,  setOk]  = useState(false);
+  const [search, setSearch] = useState("");
 
   function addUser() {
     if (!f.name||!f.email||!f.pin) { setErr("Fill all required fields."); return; }
-    if (f.pin!==f.pin2)            { setErr("PINs do not match."); return; }
-    if (f.pin.length<4)            { setErr("PIN must be 4+ digits."); return; }
+    if (f.pin!==f.pin2) { setErr("PINs do not match."); return; }
+    if (f.pin.length<4) { setErr("PIN must be 4+ digits."); return; }
     if (state.staff.find(s=>s.email.toLowerCase()===f.email.toLowerCase())) { setErr("Email already registered."); return; }
     dispatch({ type:"ADD_STAFF", s:{ id:"st"+Date.now(), name:f.name, email:f.email, role:f.role, year:f.year, pin:f.pin, studentId:f.studentId, childIds:f.childIds } });
-    setOk(true); setF({ name:"", email:"", role:"teacher", year:"", pin:"", pin2:"", studentId:"", childIds:[] }); setErr("");
-    setTimeout(() => setOk(false), 3000);
+    setOk(true); setF({ name:"",email:"",role:"teacher",year:"",pin:"",pin2:"",studentId:"",childIds:[] }); setErr("");
+    setTimeout(()=>setOk(false), 3000);
+  }
+
+  const vis = state.staff.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase()));
+
+  const ROLE_BADGE = { admin:["ADMIN","#f59e0b"], student:["STUDENT","#3b82f6"], parent:["PARENT","#8b5cf6"], counselor:["COUNSELOR","#0f766e"], safeguarding:["SAFEGUARD","#dc2626"] };
+
+  return (
+    <div>
+      {bulkOpen && <BulkUploadUsers state={state} dispatch={dispatch} onClose={()=>setBulkOpen(false)} brand={brand} />}
+      {editUser  && <EditUserModal  user={editUser} state={state} dispatch={dispatch} onClose={()=>setEditUser(null)} brand={brand} />}
+
+      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search users…" style={{...inp,flex:2,fontSize:12}} />
+        <button onClick={()=>setBulkOpen(true)} style={btnS("#8b5cf6")}>Bulk Upload</button>
+        <button onClick={()=>setAddOpen(a=>!a)}  style={btnS(brand.primaryColor)}>{addOpen?"Cancel":"+ Add User"}</button>
+      </div>
+
+      {addOpen && (
+        <div style={{background:"#f8fafc",borderRadius:10,padding:14,marginBottom:14,border:"1px solid #e2e8f0"}}>
+          {ok  && <div style={{color:"#16a34a",fontWeight:600,marginBottom:6}}>User enrolled!</div>}
+          {err && <div style={{color:"#dc2626",fontSize:12,marginBottom:6}}>{err}</div>}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+            <div><label style={lbl}>Name *</label><input value={f.name} onChange={e=>setF(x=>({...x,name:e.target.value}))} style={inp} /></div>
+            <div><label style={lbl}>Email *</label><input value={f.email} onChange={e=>setF(x=>({...x,email:e.target.value}))} style={inp} /></div>
+            <div><label style={lbl}>Role *</label>
+              <select value={f.role} onChange={e=>setF(x=>({...x,role:e.target.value}))} style={inp}>
+                {ROLES.filter(r=>r.id!=="admin").map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+              </select>
+            </div>
+            {f.role==="teacher" && <div><label style={lbl}>Class</label><select value={f.year} onChange={e=>setF(x=>({...x,year:e.target.value}))} style={inp}><option value="">—</option>{CLASSES.map(c=><option key={c}>{c}</option>)}</select></div>}
+            {f.role==="student" && <div><label style={lbl}>Linked Student</label><select value={f.studentId||""} onChange={e=>setF(x=>({...x,studentId:e.target.value,year:state.students.find(s=>s.id===e.target.value)?.grade||""}))} style={inp}><option value="">Select…</option>{state.students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
+            {f.role==="parent" && <div><label style={lbl}>Children (hold Ctrl)</label><select multiple style={{...inp,height:80}} onChange={e=>setF(x=>({...x,childIds:[...e.target.selectedOptions].map(o=>o.value)}))}>{state.students.map(s=><option key={s.id} value={s.id}>{s.name} ({s.grade})</option>)}</select></div>}
+            <div><label style={lbl}>PIN *</label><input type="password" value={f.pin} onChange={e=>setF(x=>({...x,pin:e.target.value}))} style={inp} maxLength={6} /></div>
+            <div><label style={lbl}>Confirm PIN *</label><input type="password" value={f.pin2} onChange={e=>setF(x=>({...x,pin2:e.target.value}))} style={inp} maxLength={6} /></div>
+          </div>
+          <button onClick={addUser} style={{...btnS("#22c55e"),marginTop:10}}>Enrol User</button>
+        </div>
+      )}
+
+      <div style={{fontSize:12,color:"#94a3b8",marginBottom:8}}>{vis.length} user{vis.length!==1?"s":""}</div>
+      <div style={{display:"grid",gap:7}}>
+        {vis.map(s => {
+          const role  = ROLES.find(r=>r.id===s.role);
+          const badge = ROLE_BADGE[s.role];
+          return (
+            <div key={s.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 13px",borderRadius:8,border:"1px solid #f1f5f9",background:"white"}}>
+              <div>
+                <div style={{fontWeight:600,fontSize:13}}>
+                  {s.name}
+                  {badge && <span style={{fontSize:10,background:badge[1],color:"white",padding:"1px 6px",borderRadius:10,marginLeft:5}}>{badge[0]}</span>}
+                </div>
+                <div style={{fontSize:11,color:"#94a3b8"}}>{s.email} · {role?.label}{s.year?" · "+s.year:""}</div>
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <button onClick={()=>setEditUser(s)} style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#1d4ed8",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:11}}>Edit</button>
+                {s.role!=="admin" && <button onClick={()=>{if(window.confirm("Remove "+s.name+"?")) dispatch({type:"DELETE_STAFF",id:s.id});}} style={{background:"#fef2f2",border:"1px solid #fca5a5",color:"#ef4444",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:11}}>Remove</button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT USER MODAL ──────────────────────────────────────────────────────────
+function EditUserModal({ user, state, dispatch, onClose, brand }) {
+  const [f, setF] = useState({ name:user.name, email:user.email, role:user.role, year:user.year||"", pin:"", pin2:"", studentId:user.studentId||"", childIds:user.childIds||[] });
+  const [err, setErr] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  function save() {
+    if (!f.name.trim()||!f.email.trim()) { setErr("Name and email are required."); return; }
+    if (f.pin && f.pin!==f.pin2) { setErr("PINs do not match."); return; }
+    if (f.pin && f.pin.length<4) { setErr("PIN must be 4+ digits."); return; }
+    const data = { name:f.name.trim(), email:f.email.trim(), role:f.role, year:f.year, studentId:f.studentId, childIds:f.childIds };
+    if (f.pin) data.pin = f.pin;
+    dispatch({ type:"UPDATE_STAFF", id:user.id, data });
+    setSaved(true); setTimeout(onClose, 1200);
+  }
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"white",borderRadius:16,padding:24,width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{margin:0,fontSize:17}}>Edit User — {user.name}</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#94a3b8"}}>✕</button>
+        </div>
+        {saved && <div style={{color:"#16a34a",fontWeight:700,marginBottom:10}}>✓ Saved!</div>}
+        {err   && <div style={{color:"#dc2626",fontSize:12,marginBottom:10}}>{err}</div>}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+          <div><label style={lbl}>Name *</label><input value={f.name} onChange={e=>setF(x=>({...x,name:e.target.value}))} style={inp} /></div>
+          <div><label style={lbl}>Email *</label><input value={f.email} onChange={e=>setF(x=>({...x,email:e.target.value}))} style={inp} /></div>
+          <div><label style={lbl}>Role</label>
+            <select value={f.role} onChange={e=>setF(x=>({...x,role:e.target.value}))} style={inp} disabled={user.role==="admin"}>
+              {ROLES.filter(r=>r.id!=="admin").map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </div>
+          {f.role==="teacher" && <div><label style={lbl}>Class</label><select value={f.year} onChange={e=>setF(x=>({...x,year:e.target.value}))} style={inp}><option value="">—</option>{CLASSES.map(c=><option key={c}>{c}</option>)}</select></div>}
+          {f.role==="student" && <div><label style={lbl}>Linked Student</label><select value={f.studentId||""} onChange={e=>setF(x=>({...x,studentId:e.target.value}))} style={inp}><option value="">Select…</option>{state.students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
+          {f.role==="parent" && <div style={{gridColumn:"1/-1"}}><label style={lbl}>Children (hold Ctrl)</label><select multiple style={{...inp,height:80}} value={f.childIds} onChange={e=>setF(x=>({...x,childIds:[...e.target.selectedOptions].map(o=>o.value)}))}>{state.students.map(s=><option key={s.id} value={s.id}>{s.name} ({s.grade})</option>)}</select></div>}
+          <div><label style={lbl}>New PIN (blank = keep current)</label><input type="password" value={f.pin} onChange={e=>setF(x=>({...x,pin:e.target.value}))} style={inp} maxLength={6} /></div>
+          {f.pin && <div><label style={lbl}>Confirm PIN</label><input type="password" value={f.pin2} onChange={e=>setF(x=>({...x,pin2:e.target.value}))} style={inp} maxLength={6} /></div>}
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:16}}>
+          <button onClick={onClose} style={{...btnS("#94a3b8"),flex:1}}>Cancel</button>
+          <button onClick={save}   style={{...btnS(brand.primaryColor),flex:2}}>Save Changes</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BULK UPLOAD USERS ────────────────────────────────────────────────────────
+function BulkUploadUsers({ state, dispatch, onClose, brand }) {
+  const [raw,     setRaw]     = useState("");
+  const [preview, setPreview] = useState([]);
+  const [errors,  setErrors]  = useState([]);
+  const [done,    setDone]    = useState(false);
+
+  function normalizeRole(s) {
+    const v = (s||"").trim().toLowerCase();
+    const byId = ROLES.find(r=>r.id===v); if (byId) return byId.id;
+    const byLabel = ROLES.find(r=>r.label.toLowerCase()===v); if (byLabel) return byLabel.id;
+    if (v.includes("pastoral"))   return "dean_pastoral";
+    if (v.includes("academic"))   return "dean_academic";
+    if (v.includes("discipline")) return "discipline";
+    if (v.includes("counsel"))    return "counselor";
+    if (v.includes("safeguard"))  return "safeguarding";
+    if (v.includes("teacher"))    return "teacher";
+    if (v.includes("ks3"))        return "ks3";
+    if (v.includes("ks4"))        return "ks4";
+    if (v.includes("ks5"))        return "ks5";
+    if (v.includes("principal"))  return "principal";
+    if (v.includes("student"))    return "student";
+    if (v.includes("parent"))     return "parent";
+    if (v.includes("admin"))      return "admin";
+    return null;
+  }
+
+  function parseRows(rows) {
+    const errs=[], res=[];
+    const start = rows[0]?.[0]?.toString().toLowerCase().includes("name") ? 1 : 0;
+    rows.slice(start).forEach((cols, i) => {
+      if (cols.every(c=>!c)) return;
+      const [name, email, roleRaw, year, pin] = cols.map(c=>(c||"").toString().trim());
+      if (!name) { errs.push("Row "+(i+1+start)+": missing name"); return; }
+      if (!email||!email.includes("@")) { errs.push("Row "+(i+1+start)+": invalid email"); return; }
+      const role = normalizeRole(roleRaw);
+      if (!role) { errs.push(`Row ${i+1+start}: unknown role "${roleRaw}"`); return; }
+      if (!pin||pin.length<4) { errs.push(`Row ${i+1+start}: PIN must be 4+ digits`); return; }
+      if (state.staff.find(u=>u.email.toLowerCase()===email.toLowerCase())) { errs.push(`Row ${i+1+start}: "${email}" already exists`); return; }
+      res.push({ id:"st"+Date.now()+"_"+i, name, email, role, year:year||"", pin, studentId:"", childIds:[], createdAt:Date.now() });
+    });
+    setPreview(res); setErrors(errs);
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => { const t=ev.target.result; setRaw(t); parseRows(t.trim().split("\n").map(l=>l.split(/[,\t]/).map(c=>c.trim()))); };
+    r.readAsText(file);
+  }
+
+  function dlTemplate() {
+    const rows = ["Name,Email,Role,Class,PIN","John Kamau,john@school.ac.ke,teacher,Y8/1,1234","Jane Akinyi,jane@school.ac.ke,dean_pastoral,,5678","Mary Njeri,mary@school.ac.ke,counselor,,9012"];
+    const a = document.createElement("a");
+    a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(rows.join("\n"));
+    a.download = "BPS_Users_Template.csv"; a.click();
+  }
+
+  function doImport() {
+    dispatch({ type:"ADD_STAFF_BULK", list:preview });
+    setDone(true); setTimeout(onClose, 1800);
+  }
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"white",borderRadius:16,padding:24,width:"100%",maxWidth:600,maxHeight:"88vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.25)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2 style={{margin:0,fontSize:17}}>Bulk Upload Users</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#94a3b8"}}>✕</button>
+        </div>
+        {done ? (
+          <div style={{textAlign:"center",padding:24}}><div style={{fontSize:36}}>✅</div><div style={{fontWeight:700,marginTop:8}}>{preview.length} users enrolled!</div></div>
+        ) : (
+          <>
+            <div style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:10,padding:12,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div><div style={{fontWeight:700,fontSize:13,color:"#15803d"}}>Download CSV Template</div><div style={{fontSize:11,color:"#166534"}}>Columns: Name, Email, Role, Class, PIN</div></div>
+              <button onClick={dlTemplate} style={btnS("#16a34a")}>Download .csv</button>
+            </div>
+            <div style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:8,padding:10,marginBottom:12,fontSize:11,color:"#0369a1",lineHeight:1.5}}>
+              <strong>Valid roles:</strong> admin, principal, dean_pastoral, dean_academic, discipline, counselor, safeguarding, ks3, ks4, ks5, teacher, student, parent
+            </div>
+            <div style={{border:"2px dashed #cbd5e1",borderRadius:10,padding:16,textAlign:"center",marginBottom:10,cursor:"pointer"}} onClick={()=>document.getElementById("bps-ufi").click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}}>
+              <div style={{fontSize:24,marginBottom:4}}>📂</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#475569"}}>Click or drag and drop CSV</div>
+              <input id="bps-ufi" type="file" accept=".csv,.txt" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])} />
+            </div>
+            <textarea value={raw} onChange={e=>{setRaw(e.target.value);parseRows(e.target.value.trim().split("\n").map(l=>l.split(/[,\t]/).map(c=>c.trim())));}} placeholder={"Name,Email,Role,Class,PIN\nJohn Kamau,john@school.ac.ke,teacher,Y8/1,1234"} style={{...inp,height:70,fontFamily:"monospace",fontSize:12}} />
+            {errors.length>0 && <div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:8,padding:10,marginTop:8,maxHeight:120,overflowY:"auto"}}>{errors.map((e,i)=><div key={i} style={{fontSize:12,color:"#dc2626"}}>{"• "+e}</div>)}</div>}
+            {preview.length>0 && (
+              <div style={{marginTop:10}}>
+                <div style={{fontSize:12,fontWeight:600,marginBottom:6}}>{preview.length} users ready to enrol</div>
+                <div style={{maxHeight:130,overflowY:"auto",marginBottom:10,border:"1px solid #f1f5f9",borderRadius:8,padding:"4px 0"}}>
+                  {preview.map((u,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"5px 10px",borderBottom:"1px solid #f8fafc"}}>
+                      <span><strong>{u.name}</strong> <span style={{color:"#94a3b8"}}>· {ROLES.find(r=>r.id===u.role)?.label}</span></span>
+                      <span style={{color:"#94a3b8"}}>{u.email}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={doImport} style={{...btnS("#22c55e"),width:"100%",padding:"10px"}}>Enrol {preview.length} Users</button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── HOUSES EDITOR ────────────────────────────────────────────────────────────
+function HousesEditor({ state, dispatch, brand }) {
+  const [houses, setHouses] = useState(() => state.houses.map(h => ({...h})));
+  const [saved,  setSaved]  = useState(false);
+
+  function hexToRgba(hex, alpha) {
+    try { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${alpha})`; }
+    catch { return hex; }
+  }
+  function setColor(i, color) {
+    setHouses(hs => hs.map((h,j) => j===i ? { ...h, color, bg:hexToRgba(color,0.08), border:hexToRgba(color,0.35) } : h));
+  }
+  function save() {
+    const housesData = houses.map(h => ({ id:h.id, customName:h.customName, color:h.color, bg:h.bg, border:h.border }));
+    dispatch({ type:"UPDATE_BRAND", brand:{ houses:housesData } });
+    setSaved(true); setTimeout(()=>setSaved(false), 2000);
   }
 
   return (
     <div>
-      <h2 style={{fontSize:17,marginBottom:16}}>Admin Panel</h2>
-      <div style={{background:"white",borderRadius:12,padding:18,border:"1px solid #e2e8f0"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{margin:0,fontSize:14}}>All Users ({state.staff.length})</h3>
-          <button onClick={() => setOpen(o=>!o)} style={btnS("#6b21a8")}>{open?"Cancel":"+ Add User"}</button>
-        </div>
-        {open && (
-          <div style={{background:"#f8fafc",borderRadius:10,padding:14,marginBottom:14}}>
-            {ok  && <div style={{color:"#16a34a",fontWeight:600,marginBottom:6}}>User enrolled!</div>}
-            {err && <div style={{color:"#dc2626",fontSize:12,marginBottom:6}}>{err}</div>}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-              <div><label style={lbl}>Name *</label><input value={f.name} onChange={e=>setF(x=>({...x,name:e.target.value}))} style={inp} /></div>
-              <div><label style={lbl}>Email *</label><input value={f.email} onChange={e=>setF(x=>({...x,email:e.target.value}))} style={inp} /></div>
-              <div><label style={lbl}>Role *</label>
-                <select value={f.role} onChange={e=>setF(x=>({...x,role:e.target.value}))} style={inp}>
-                  {ROLES.filter(r=>r.id!=="admin").map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
-                </select>
-              </div>
-              {f.role==="teacher" && <div><label style={lbl}>Class</label><select value={f.year} onChange={e=>setF(x=>({...x,year:e.target.value}))} style={inp}><option value="">—</option>{CLASSES.map(c=><option key={c}>{c}</option>)}</select></div>}
-              {f.role==="student" && <div><label style={lbl}>Linked Student</label><select value={f.studentId||""} onChange={e=>setF(x=>({...x,studentId:e.target.value,year:state.students.find(s=>s.id===e.target.value)?.grade||""}))} style={inp}><option value="">Select…</option>{state.students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
-              {f.role==="parent" && <div><label style={lbl}>Children (hold Ctrl)</label><select multiple style={{...inp,height:80}} onChange={e=>setF(x=>({...x,childIds:[...e.target.selectedOptions].map(o=>o.value)}))}>{state.students.map(s=><option key={s.id} value={s.id}>{s.name} ({s.grade})</option>)}</select></div>}
-              <div><label style={lbl}>PIN *</label><input type="password" value={f.pin} onChange={e=>setF(x=>({...x,pin:e.target.value}))} style={inp} maxLength={6} /></div>
-              <div><label style={lbl}>Confirm PIN *</label><input type="password" value={f.pin2} onChange={e=>setF(x=>({...x,pin2:e.target.value}))} style={inp} maxLength={6} /></div>
+      <div style={{fontSize:12,color:"#64748b",marginBottom:14}}>Rename houses and change their colours. Changes are saved per school.</div>
+      <div style={{display:"grid",gap:12,marginBottom:16}}>
+        {houses.map((h,i) => (
+          <div key={h.id} style={{background:"white",borderRadius:12,padding:16,border:`2px solid ${h.color}44`,display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:h.color,display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:900,fontSize:16,flexShrink:0}}>{h.customName[0]||"?"}</div>
+            <div style={{flex:1}}>
+              <label style={lbl}>Display Name</label>
+              <input value={h.customName} onChange={e=>setHouses(hs=>hs.map((x,j)=>j===i?{...x,customName:e.target.value}:x))} style={inp} />
             </div>
-            <button onClick={addUser} style={{...btnS("#22c55e"),marginTop:10}}>Enrol User</button>
+            <div style={{flexShrink:0}}>
+              <label style={lbl}>Colour</label>
+              <input type="color" value={h.color} onChange={e=>setColor(i,e.target.value)} style={{width:52,height:36,padding:"2px 3px",border:"1px solid #e2e8f0",borderRadius:6,cursor:"pointer",display:"block"}} />
+            </div>
           </div>
-        )}
-        <div style={{display:"grid",gap:7}}>
-          {state.staff.map(s => {
-            const role = ROLES.find(r=>r.id===s.role);
-            return (
-              <div key={s.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 13px",borderRadius:8,border:"1px solid #f1f5f9"}}>
-                <div>
-                  <div style={{fontWeight:600,fontSize:13}}>
-                    {s.name}
-                    {s.role==="admin"   && <span style={{fontSize:10,background:"#fbbf24",color:"white",padding:"1px 6px",borderRadius:10,marginLeft:5}}>ADMIN</span>}
-                    {s.role==="student" && <span style={{fontSize:10,background:"#dbeafe",color:"#1e40af",padding:"1px 6px",borderRadius:10,marginLeft:5}}>STUDENT</span>}
-                    {s.role==="parent"  && <span style={{fontSize:10,background:"#f3e8ff",color:"#6b21a8",padding:"1px 6px",borderRadius:10,marginLeft:5}}>PARENT</span>}
-                  </div>
-                  <div style={{fontSize:11,color:"#94a3b8"}}>{s.email} · {role?.label}{s.year?" · "+s.year:""}</div>
-                </div>
-                {s.role!=="admin" && (
-                  <button onClick={() => { if (window.confirm("Remove "+s.name+"?")) dispatch({ type:"DELETE_STAFF", id:s.id }); }} style={{background:"#fef2f2",border:"1px solid #fca5a5",color:"#ef4444",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontSize:11}}>Remove</button>
-                )}
-              </div>
-            );
-          })}
+        ))}
+      </div>
+      {saved && <div style={{color:"#16a34a",fontWeight:600,marginBottom:8}}>✓ Houses saved!</div>}
+      <button onClick={save} style={{...btnS(brand.primaryColor),width:"100%"}}>Save House Settings</button>
+    </div>
+  );
+}
+
+// ─── MATRIX EDITOR ────────────────────────────────────────────────────────────
+function MatrixEditor({ state, dispatch, brand }) {
+  const [local,    setLocal]    = useState(() => JSON.parse(JSON.stringify(state.customMatrix || MATRIX)));
+  const [dirty,    setDirty]    = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [saved,    setSaved]    = useState(false);
+
+  function mut(fn) {
+    setLocal(m => { const next = JSON.parse(JSON.stringify(m)); fn(next); setDirty(true); return next; });
+  }
+
+  function save() {
+    dispatch({ type:"UPDATE_MATRIX", matrix:local });
+    setDirty(false); setSaved(true); setTimeout(()=>setSaved(false), 2500);
+  }
+  function resetDef() {
+    if (!window.confirm("Reset behaviour matrix to system default? Any custom items will be lost.")) return;
+    dispatch({ type:"UPDATE_MATRIX", matrix:null });
+    setLocal(JSON.parse(JSON.stringify(MATRIX)));
+    setDirty(false);
+  }
+
+  const totalItems = local.reduce((s,c)=>s+c.items.length, 0);
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+        <div style={{fontSize:12,color:"#64748b"}}>{local.length} categories · {totalItems} behaviours · {state.customMatrix?"Custom":"Default"}</div>
+        <div style={{display:"flex",gap:8}}>
+          {state.customMatrix && <button onClick={resetDef} style={{...btnS("#94a3b8"),fontSize:12}}>Reset to Default</button>}
+          <button onClick={save} disabled={!dirty} style={{...btnS(dirty?brand.primaryColor:"#94a3b8"),opacity:dirty?1:0.5}}>Save Changes</button>
         </div>
       </div>
+      {saved && <div style={{color:"#16a34a",fontWeight:600,marginBottom:10}}>✓ Matrix saved!</div>}
+      <div style={{background:"#fffbeb",border:"1px solid #fcd34d",borderRadius:8,padding:10,marginBottom:14,fontSize:12,color:"#92400e"}}>
+        Merit: positive numbers (e.g. +2). Demerit: negative numbers (e.g. -3). Leave blank = not applicable for that type.
+      </div>
+      <div style={{display:"grid",gap:8,marginBottom:10}}>
+        {local.map((cat, ci) => (
+          <div key={ci} style={{background:"white",borderRadius:10,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:expanded===ci?"#f3e8ff":"#f8fafc",cursor:"pointer"}} onClick={()=>setExpanded(expanded===ci?null:ci)}>
+              <span style={{fontSize:12,color:"#94a3b8",width:14,flexShrink:0}}>{expanded===ci?"▼":"▶"}</span>
+              <input
+                value={cat.category}
+                onClick={e=>e.stopPropagation()}
+                onChange={e=>mut(m=>{m[ci].category=e.target.value;})}
+                style={{flex:1,border:"none",background:"transparent",fontWeight:700,fontSize:13,outline:"none",color:"#1e293b",cursor:"text",minWidth:0}}
+              />
+              <span style={{fontSize:11,color:"#94a3b8",flexShrink:0}}>{cat.items.length} items</span>
+              <button onClick={e=>{e.stopPropagation();if(window.confirm("Delete \""+cat.category+"\" and its "+cat.items.length+" items?")) mut(m=>{m.splice(ci,1);if(expanded===ci)setExpanded(null);});}} style={{background:"#fef2f2",border:"none",color:"#ef4444",borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:11,flexShrink:0}}>Delete</button>
+            </div>
+            {expanded===ci && (
+              <div style={{padding:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 64px 70px 28px",gap:6,marginBottom:6,paddingBottom:4,borderBottom:"1px solid #f1f5f9"}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"#94a3b8"}}>BEHAVIOUR</span>
+                  <span style={{fontSize:10,fontWeight:700,color:"#16a34a",textAlign:"center"}}>MERIT</span>
+                  <span style={{fontSize:10,fontWeight:700,color:"#dc2626",textAlign:"center"}}>DEMERIT</span>
+                  <span/>
+                </div>
+                {cat.items.map((item, ii) => (
+                  <div key={item.id} style={{display:"grid",gridTemplateColumns:"1fr 64px 70px 28px",gap:6,marginBottom:6,alignItems:"center"}}>
+                    <input value={item.label} onChange={e=>mut(m=>{m[ci].items[ii].label=e.target.value;})} style={{...inp,padding:"5px 8px",fontSize:12}} />
+                    <input type="number" value={item.merit??""} onChange={e=>mut(m=>{m[ci].items[ii].merit=e.target.value===""?null:+e.target.value;})} placeholder="—" style={{...inp,padding:"5px",fontSize:12,textAlign:"center"}} />
+                    <input type="number" value={item.demerit??""} onChange={e=>mut(m=>{m[ci].items[ii].demerit=e.target.value===""?null:+e.target.value;})} placeholder="—" style={{...inp,padding:"5px",fontSize:12,textAlign:"center"}} />
+                    <button onClick={()=>mut(m=>{m[ci].items.splice(ii,1);})} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",fontSize:16,lineHeight:1,padding:0}}>✕</button>
+                  </div>
+                ))}
+                <button onClick={()=>mut(m=>{m[ci].items.push({id:"c"+Date.now()+"_"+Math.random().toString(36).slice(2,5),label:"New behaviour",merit:null,demerit:null});})} style={{...btnS(brand.primaryColor),width:"100%",fontSize:12,padding:"6px",marginTop:4}}>+ Add Behaviour</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <button onClick={()=>{ const newIdx=local.length; mut(m=>{m.push({category:"New Category",items:[]});}); setExpanded(newIdx); }} style={{...btnS("#0f766e"),width:"100%",fontSize:12}}>+ Add Category</button>
     </div>
   );
 }

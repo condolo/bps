@@ -1,16 +1,24 @@
 import { HOUSES, DEFAULT_BRAND } from './constants.js';
 
+function applyBrandHouses(brandHouses, fallback) {
+  return HOUSES.map(h => {
+    const ov = brandHouses?.find(bh => bh.id === h.id);
+    return ov ? { ...h, ...ov } : (fallback?.find(fh => fh.id === h.id) || { ...h, customName: h.name + " (" + h.colorLabel + ")" });
+  });
+}
+
 export function reducer(state, action) {
   switch (action.type) {
-    case "LOAD":
-      return {
-        ...state,
-        ...action.state,
-        houses: HOUSES.map(h => ({ ...h, customName: h.name+" ("+h.colorLabel+")" })),
-        brand: { ...DEFAULT_BRAND, ...(action.state.brand || {}) },
-      };
-    case "UPDATE_BRAND":
-      return { ...state, brand: { ...state.brand, ...action.brand } };
+    case "LOAD": {
+      const brand = { ...DEFAULT_BRAND, ...(action.state.brand || {}) };
+      const houses = applyBrandHouses(brand.houses, null);
+      return { ...state, ...action.state, brand, houses, customMatrix: action.state.customMatrix ?? null };
+    }
+    case "UPDATE_BRAND": {
+      const newBrand = { ...state.brand, ...action.brand };
+      const houses = newBrand.houses ? applyBrandHouses(newBrand.houses, state.houses) : state.houses;
+      return { ...state, brand: newBrand, houses };
+    }
     case "ADD_STUDENT":
       return { ...state, students: [...state.students, action.s] };
     case "ADD_STUDENTS_BULK":
@@ -23,6 +31,12 @@ export function reducer(state, action) {
       };
     case "ADD_STAFF":
       return { ...state, staff: [...state.staff, action.s] };
+    case "ADD_STAFF_BULK":
+      return { ...state, staff: [...state.staff, ...action.list] };
+    case "UPDATE_STAFF":
+      return { ...state, staff: state.staff.map(s => s.id === action.id ? { ...s, ...action.data } : s) };
+    case "UPDATE_MATRIX":
+      return { ...state, customMatrix: action.matrix };
     case "DELETE_STAFF":
       return { ...state, staff: state.staff.filter(s => s.id !== action.id) };
     case "ADD_LOG":

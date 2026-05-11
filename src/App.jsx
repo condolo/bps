@@ -12,6 +12,7 @@ const INIT = {
   students: [], staff: [], logs: [], notifications: [], appeals: [],
   houses: HOUSES.map(h => ({ ...h, customName: h.name+" ("+h.colorLabel+")" })),
   brand: DEFAULT_BRAND,
+  customMatrix: null,
 };
 
 function LoadingScreen() {
@@ -81,7 +82,10 @@ export default function App() {
         case "ADD_STUDENTS_BULK":   await api.addStudentsBulk(action.list); break;
         case "DELETE_STUDENT":      await api.deleteStudent(action.id); break;
         case "ADD_STAFF":           await api.addUser(action.s); break;
+        case "ADD_STAFF_BULK":      await api.addUsersBulk(action.list); break;
+        case "UPDATE_STAFF":        await api.updateUser(action.id, action.data); break;
         case "DELETE_STAFF":        await api.deleteUser(action.id); break;
+        case "UPDATE_MATRIX":       await api.updateMatrix(action.matrix); break;
         case "ADD_LOG":             await api.addLog(action.log, action.notifs); break;
         case "MARK_READ":           await api.markRead(action.id, action.uid); break;
         case "SUBMIT_APPEAL":       await api.submitAppeal(action.appeal, action.logId); break;

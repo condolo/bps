@@ -4,6 +4,26 @@ All notable changes to BPS are documented here.
 
 ---
 
+## [3.4.0] — 2026-05-11
+
+### Added
+- **Edit users** — Admin can edit name, email, role, class assignment, and reset PIN for any user in their school via inline modal
+- **Bulk upload users** — CSV upload for staff/users; template download with columns Name, Email, Role, Class, PIN; role names accepted as IDs or labels; duplicate email detection
+- **New roles** — `School Counselor` and `Safeguarding Officer` added to role list; both receive full senior-level dashboard access (alerts, stage reports, serious incidents)
+- **Editable houses** — Admin can rename all 4 houses and change their colours per school (stored in brand settings)
+- **Editable behaviour matrix** — Admin can add/rename/delete categories and individual behaviour items, set custom merit/demerit point values; changes stored per school in MongoDB `settings` collection; Reset to Default button available
+- `PATCH /api/users/:id` — update user fields (PIN only updated when provided)
+- `POST /api/users/bulk` — bulk enrol users scoped to school
+- `GET/PUT/DELETE /api/matrix` — per-school behaviour matrix stored in `settings` collection
+- Admin panel now has three tabs: **Users**, **Houses**, **Behaviour Matrix**
+
+### Changed
+- `behavLabel()` now accepts optional custom matrix, falls back to default for backward compatibility with old log entries
+- Award Points flow uses school's custom matrix when one exists
+- CORS now correctly allows `X-School-Id` header
+
+---
+
 ## [3.3.0] — 2026-05-11
 
 ### Changed

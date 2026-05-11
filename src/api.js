@@ -37,16 +37,19 @@ export const api = {
       req('GET', '/notifications'),
       req('GET', '/appeals'),
       req('GET', '/brand'),
-    ]).then(([students, staff, logs, notifications, appeals, brand]) => ({
-      students, staff, logs, notifications, appeals, brand,
+      req('GET', '/matrix'),
+    ]).then(([students, staff, logs, notifications, appeals, brand, customMatrix]) => ({
+      students, staff, logs, notifications, appeals, brand, customMatrix,
     })),
 
   addStudent:      (s)        => req('POST',   '/students',      s),
   addStudentsBulk: (students) => req('POST',   '/students/bulk', { students }),
   deleteStudent:   (id)       => req('DELETE', `/students/${id}`),
 
-  addUser:    (u)  => req('POST',   '/users',   u),
-  deleteUser: (id) => req('DELETE', `/users/${id}`),
+  addUser:      (u)       => req('POST',   '/users',        u),
+  addUsersBulk: (users)  => req('POST',   '/users/bulk',   { users }),
+  updateUser:   (id, d)  => req('PATCH',  `/users/${id}`,  d),
+  deleteUser:   (id)     => req('DELETE', `/users/${id}`),
 
   addLog:  (log, notifs) => req('POST', '/logs', { log, notifs }),
 
@@ -58,6 +61,9 @@ export const api = {
 
   getBrand:    ()      => req('GET', '/brand'),
   updateBrand: (brand) => req('PUT', '/brand', brand),
+
+  getMatrix:    ()       => req('GET', '/matrix'),
+  updateMatrix: (matrix) => matrix ? req('PUT', '/matrix', matrix) : req('DELETE', '/matrix'),
 
   // Super admin (schoolId must be 'system')
   superStats:         ()         => req('GET',   '/super/stats'),
